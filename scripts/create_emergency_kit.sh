@@ -29,9 +29,9 @@ fi
     echo "Vaultwarden admin:     (plaintext not stored on this host; use the token in your password manager)"
   fi
   echo
-  echo "## Linux accounts (change these if they are still the installer defaults)"
-  echo "root:   root"
-  echo "YOUR_USERNAME:  YOUR_USERNAME"
+  echo "## Linux accounts"
+  echo "root:   change it if it is still the installer default (passwd root)"
+  echo "linux user (uid 1000): change it if it is still the installer default (passwd <user>)"
   echo
   echo "## Restore instructions"
   cat <<'EOT'
