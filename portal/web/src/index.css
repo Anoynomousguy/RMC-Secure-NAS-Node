@@ -1,0 +1,415 @@
+@import "tailwindcss";
+
+/* Dark variant follows the [data-theme] attribute, not the OS setting. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ---------------------------------------------------------------------------
+   Fluent token system (OneDrive-flavoured), exposed as CSS variables
+   and wired into the Tailwind theme below.
+   --------------------------------------------------------------------------- */
+
+:root {
+  --brand: #0f6cbd;
+  --brand-hover: #115ea3;
+  --brand-pressed: #0c3b5e;
+  --brand-fg: #0f6cbd;
+  --brand-tint: #ebf3fc;
+
+  --surface-canvas: #fafafa;
+  --surface: #ffffff;
+  --surface-subtle: #fafafa;
+  --surface-hover: #f5f5f5;
+  --surface-selected: #ebebeb;
+  --surface-muted: #e0e0e0;
+
+  --text-1: #242424;
+  --text-2: #424242;
+  --text-3: #616161;
+
+  --stroke-1: #d1d1d1;
+  --stroke-2: #e0e0e0;
+
+  --danger: #c50f1f;
+  --danger-hover: #b10e1c;
+  --danger-pressed: #990d19;
+  --success: #107c10;
+  --warning: #f7630c;
+
+  --focus-ring: #0f6cbd;
+  --overlay: rgba(0, 0, 0, 0.4);
+  --shadow-16: 0 0 2px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.14);
+  --shadow-64: 0 0 8px rgba(0, 0, 0, 0.12), 0 32px 64px rgba(0, 0, 0, 0.24);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --brand-fg: #479ef5;
+  --brand-tint: #082338;
+
+  --surface-canvas: #1f1f1f;
+  --surface: #292929;
+  --surface-subtle: #1f1f1f;
+  --surface-hover: #383838;
+  --surface-selected: #383838;
+  --surface-muted: #404040;
+
+  --text-1: #ffffff;
+  --text-2: #d6d6d6;
+  --text-3: #adadad;
+
+  --stroke-1: #666666;
+  --stroke-2: #525252;
+
+  --focus-ring: #479ef5;
+  --overlay: rgba(0, 0, 0, 0.55);
+  --shadow-16: 0 0 2px rgba(0, 0, 0, 0.24), 0 8px 16px rgba(0, 0, 0, 0.3);
+  --shadow-64: 0 0 8px rgba(0, 0, 0, 0.24), 0 32px 64px rgba(0, 0, 0, 0.42);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+
+  --color-canvas: var(--surface-canvas);
+  --color-surface: var(--surface);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-selected: var(--surface-selected);
+  --color-surface-muted: var(--surface-muted);
+
+  --color-ink: var(--text-1);
+  --color-ink-2: var(--text-2);
+  --color-ink-3: var(--text-3);
+
+  --color-line: var(--stroke-1);
+  --color-line-subtle: var(--stroke-2);
+
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-pressed: var(--brand-pressed);
+  --color-brand-fg: var(--brand-fg);
+  --color-brand-tint: var(--brand-tint);
+
+  --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
+  --color-danger-pressed: var(--danger-pressed);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+
+  --radius-control: 4px;
+  --radius-card: 8px;
+  --shadow-menu: var(--shadow-16);
+  --shadow-dialog: var(--shadow-64);
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: var(--surface-canvas);
+    color: var(--text-1);
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue",
+      sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 1px;
+  }
+
+  ::placeholder {
+    color: var(--text-3);
+    opacity: 1;
+  }
+
+  ::selection {
+    background: var(--brand-tint);
+  }
+
+  input[type="search"]::-webkit-search-cancel-button,
+  input[type="search"]::-webkit-search-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--stroke-1) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--stroke-1);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    background-clip: content-box;
+  }
+}
+
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: var(--radius-control);
+    border: 1px solid transparent;
+    font-size: 14px;
+    line-height: 20px;
+    white-space: nowrap;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  .btn-primary {
+    background: var(--brand);
+    color: #ffffff;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: var(--brand-hover);
+  }
+
+  .btn-primary:active:not(:disabled) {
+    background: var(--brand-pressed);
+  }
+
+  .btn-secondary {
+    background: var(--surface);
+    border-color: var(--stroke-1);
+    color: var(--text-1);
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--surface-hover);
+  }
+
+  .btn-subtle {
+    background: transparent;
+    color: var(--text-1);
+  }
+
+  .btn-subtle:hover:not(:disabled) {
+    background: var(--surface-hover);
+  }
+
+  .btn-danger {
+    background: transparent;
+    color: var(--danger);
+  }
+
+  .btn-danger:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--danger) 10%, transparent);
+  }
+
+  .btn-danger-solid {
+    background: var(--danger);
+    color: #ffffff;
+  }
+
+  .btn-danger-solid:hover:not(:disabled) {
+    background: var(--danger-hover);
+  }
+
+  .btn-danger-solid:active:not(:disabled) {
+    background: var(--danger-pressed);
+  }
+
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-control);
+    color: var(--text-2);
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .icon-btn:hover:not(:disabled) {
+    background: var(--surface-hover);
+    color: var(--text-1);
+  }
+
+  .icon-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  .icon-btn[data-active="true"] {
+    background: var(--brand-tint);
+    color: var(--brand-fg);
+  }
+
+  .menu-panel {
+    min-width: 220px;
+    max-width: 340px;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--stroke-2);
+    background: var(--surface);
+    padding: 4px;
+    box-shadow: var(--shadow-16);
+  }
+
+  .skeleton {
+    background: var(--surface-muted);
+    border-radius: 4px;
+    animation: mc-pulse 1.6s ease-in-out infinite;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Motion — 150–200ms fades/slides, subtle.
+   --------------------------------------------------------------------------- */
+
+@keyframes mc-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes mc-rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mc-menu {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes mc-dialog {
+  from {
+    opacity: 0;
+    transform: scale(0.98) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes mc-toast {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes mc-slide-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes mc-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: mc-fade 0.18s ease-out both;
+  }
+
+  .animate-rise-in {
+    animation: mc-rise 0.2s ease-out both;
+  }
+
+  .animate-menu-in {
+    animation: mc-menu 0.15s ease-out both;
+    transform-origin: top left;
+  }
+
+  .animate-dialog-in {
+    animation: mc-dialog 0.2s ease-out both;
+  }
+
+  .animate-toast-in {
+    animation: mc-toast 0.2s ease-out both;
+  }
+
+  .animate-drawer-in {
+    animation: mc-slide-left 0.2s ease-out both;
+  }
+
+  .stagger-item {
+    animation: mc-rise 0.22s ease-out both;
+    animation-delay: calc(var(--stagger, 0) * 25ms);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

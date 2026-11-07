@@ -77,7 +77,67 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  portal:
+    build: ./portal
+    container_name: fortress-portal
+    restart: unless-stopped
+    user: "0:0"
+    environment:
+      PORT: "3000"
+      HOST: 0.0.0.0
+      DATA_DIR: /data
+      STATIC_DIR: /app/web/dist
+      TRUST_PROXY_AUTH: "true"
+      QUOTA_LIMIT_BYTES: "53687091200"
+      MAX_UPLOAD_MB: "512"
+    volumes:
+      - ./data:/data
+    ports:
+      - "127.0.0.1:3000:3000"
+    mem_limit: 512m
+    memswap_limit: 512m
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      - dufs
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:2.5.9
+    container_name: fortress-uptime-kuma
+    restart: unless-stopped
+    environment:
+      UPTIME_KUMA_DB_TYPE: sqlite
+    volumes:
+      - kuma_data:/app/data
+    ports:
+      - "127.0.0.1:3001:3001"
+    mem_limit: 256m
+    memswap_limit: 256m
+    security_opt:
+      - no-new-privileges:true
+
+  kuma-init:
+    image: node:22-alpine
+    container_name: fortress-kuma-init
+    restart: "no"
+    depends_on:
+      uptime-kuma:
+        condition: service_healthy
+    environment:
+      UPTIME_KUMA_URL: http://uptime-kuma:3001
+      UPTIME_KUMA_USERNAME: admin
+      UPTIME_KUMA_PASSWORD: ${KUMA_ADMIN_PASSWORD:?set KUMA_ADMIN_PASSWORD in .env}
+    volumes:
+      - ./kuma-init/init.cjs:/init.cjs:ro
+    working_dir: /tmp
+    command: sh -c "npm install --no-save --no-audit --no-fund socket.io-client@4.8.3 >/dev/null 2>&1 && NODE_PATH=/tmp/node_modules node /init.cjs"
+    mem_limit: 128m
+    memswap_limit: 128m
+    security_opt:
+      - no-new-privileges:true
+
 volumes:
   vaultwarden_data:
   caddy_data:
   caddy_config:
+  kuma_data:

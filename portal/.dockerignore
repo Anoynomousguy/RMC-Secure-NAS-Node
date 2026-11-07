@@ -1,0 +1,21 @@
+# Build context: /home/YOUR_USERNAME/nas_portal
+# Keep the context minimal. NOTE: web/dist must remain included so the
+# Dockerfile can COPY it (see Dockerfile header for details).
+
+.git
+.gitignore
+Dockerfile
+.dockerignore
+
+# Dependencies are installed inside the image.
+node_modules
+**/node_modules
+
+# Server tests are development-only.
+server/test
+
+# Logs / local env / OS noise.
+**/*.log
+**/.env
+**/.DS_Store
+npm-debug.log*

@@ -7,3 +7,7 @@ authelia/users_database.yml
 authelia/db.sqlite3
 authelia/notification.txt
 caddy/logs/
+portal/node_modules/
+portal/server/node_modules/
+portal/web/node_modules/
+portal/web/dist/
