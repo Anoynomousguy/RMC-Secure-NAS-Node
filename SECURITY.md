@@ -2,23 +2,23 @@
 
 ## 1. Scope and threat model
 
-This node is a private tactical data store. It is not intended to expose any
-service directly to the public Internet. All remote access is expected to
-arrive through a Tailscale tailnet, with SSH key authentication as the only
-interactive host login path.
+This node is a private tactical data store. It exposes no service directly to
+the public Internet. Remote access is expected to arrive through a Tailscale
+tailnet, with SSH key authentication as the only interactive host login path.
 
 The primary threats considered are:
 
 - Unauthenticated network scanning and opportunistic exploitation.
-- Credential leakage through source control.
+- Credential leakage through source control or container metadata.
 - Lateral movement between the two data tenants.
 - Accidental public exposure of a Docker-published port.
+- Supply-chain risk from an unmaintained application image.
 
 ## 2. Host hardening
 
-- OpenMediaVault web services (`openmediavault-engined`, `nginx`,
-  `php8.2-fpm`) are stopped, disabled, and systemd-masked. OMV is retained on
-  disk for recovery but is not part of the running attack surface.
+- The OMV web stack (`openmediavault-engined`, `nginx`, `php8.2-fpm`) is
+  stopped, disabled, and systemd-masked. OMV is retained on disk for recovery
+  but is not part of the running attack surface.
 - OpenSSH is configured key-only:
   - `PermitRootLogin no`
   - `PasswordAuthentication no`
@@ -31,10 +31,10 @@ The primary threats considered are:
   - TCP/22 for SSH.
   - All traffic on the `tailscale0` interface.
   - UDP/41641 for Tailscale direct-path establishment.
-- Docker services bind exclusively to `127.0.0.1`; no container port is
+- Container services bind exclusively to `127.0.0.1`; no application port is
   published on the physical LAN or on `0.0.0.0`.
-- The OMV/NFS/RPC listeners were stopped; any remaining resolver listeners are
-  covered by the UFW default-deny policy.
+- OMV/NFS/RPC listeners were stopped; remaining resolver listeners are covered
+  by the UFW default-deny policy.
 
 ## 3. Zero-trust network model
 
@@ -45,19 +45,46 @@ are untrusted transport.
 
 - Services are reached through Tailscale Serve over HTTPS at the node's
   MagicDNS name. Serve proxies only to loopback-bound containers.
-- Tailscale Serve/HTTPS certificates must be enabled for the tailnet before
-  the web services become reachable at that MagicDNS name.
+- Tailscale Serve is enabled for the tailnet and provisions a publicly trusted
+  TLS certificate for `your-nas.your-tailnet.ts.net`.
 - No inbound port forwarding is required on the upstream router.
-- Tailscale ACLs should be used to restrict which tailnet identities can reach
-  this node and which ports they can use. The default tailnet policy should be
-  tightened so only the operator's devices can reach `t410`.
-- Tailscale auth keys are never written to this repository. Node enrollment is
-  completed interactively with `tailscale up`.
+- Tailscale ACLs should restrict which tailnet identities can reach this node
+  and which ports they can use. Tailscale auth keys are never written to this
+  repository; enrollment is interactive with `tailscale up`.
 - SSH remains available on TCP/22 for break-glass host administration; it is
   key-only and should be restricted by the tailnet ACL and/or a LAN firewall
-  rule once the node is moved onto a normal network.
+  rule once the node is on the home router.
 
-## 4. RBAC and tenant isolation
+## 4. Application stack and ORM mitigation
+
+**FileBrowser replaced with Dufs due to upstream archival. Vaultwarden token
+now secured via Argon2 hashing.**
+
+- FileBrowser was retired because its upstream project is archived and receives
+  no further security fixes.
+- The replacement is **Dufs v0.47.0** (Rust, actively maintained; release
+  v0.47.0 was published 2026-10-17). The image is pinned in
+  `docker-compose.yml`.
+- Dufs is configured with:
+  - `DUFS_AUTH=admin:<sha512-crypt-hash>@/:rw`
+  - `DUFS_ALLOW_ALL=true`
+  - `DUFS_SERVE_PATH=/data`
+  - A loopback-only host port `127.0.0.1:8443`.
+- The Dufs container receives only the SHA-512 hash of the operator password,
+  not the plaintext. The plaintext `DUFS_ADMIN_PASSWORD` stays in the 0600
+  `.env` for the human operator. Dufs runs as root inside the container so it
+  can administer both tenant directories; this is an administrative capability,
+  not tenant RBAC.
+- Vaultwarden is pinned to `vaultwarden/server:1.37.5`.
+- `ADMIN_TOKEN` is an **Argon2id PHC hash**. The plaintext token is not in
+  `.env` and is not in the repository. A root-only recovery copy was created
+  during migration; it must be moved to a password manager and destroyed.
+- Both applications are bound to loopback and published only through
+  Tailscale Serve:
+  - Vaultwarden: `https://your-nas.your-tailnet.ts.net/` → `127.0.0.1:8081`
+  - Dufs: `https://your-nas.your-tailnet.ts.net:8443/` → `127.0.0.1:8443`
+
+## 5. RBAC and tenant isolation
 
 ### Operating system
 
@@ -75,38 +102,43 @@ are untrusted transport.
 
 ### Applications
 
-- FileBrowser has one initial administrative account (`admin`). The password
-  is supplied at container start from `FILEBROWSER_ADMIN_PASSWORD`. The
-  container runs as root so it can administer both tenant directories; this
-  is an intentional administrative capability, not tenant RBAC. Before
-  granting FileBrowser access to a tenant, create a scoped FileBrowser user
-  whose scope is that tenant's directory and do not share the admin account.
-- Vaultwarden has a single administrative token
-  (`VAULTWARDEN_ADMIN_TOKEN`). Public signups are disabled; accounts are
-  created by invitation from the admin panel. Each Vaultwarden user has an
-  isolated encrypted vault; the server cannot read vault contents.
+- Dufs has one initial administrative account (`admin`). The password is
+  supplied to the container as a SHA-512 crypt hash. Before granting
+  application-level tenant access, add scoped Dufs auth rules such as
+  `user1:<hash>@/user1:rw`; do not share the admin account.
+- Dufs runs as root, so files it writes are root-owned and are not charged to
+  `user1`/`user2` quotas. The OS quotas enforce UID-owned data, not
+  administrator uploads. For strict per-tenant quota enforcement, run separate
+  Dufs instances under each tenant UID or use UID-mapped container users.
+- Vaultwarden has a single administrative token (Argon2id hash). Public signups
+  are disabled; accounts are created by invitation from the admin panel. Each
+  Vaultwarden user has an isolated encrypted vault; the server cannot read
+  vault contents.
 
-## 5. Secrets management
+## 6. Secrets management
 
-- All runtime secrets live in `/srv/fortress/.env`, mode `0600`, owned by the
+- Runtime secrets live in `/srv/fortress/.env`, mode `0600`, owned by the
   operator. It is excluded by `.gitignore`.
-- `.env.example` documents the variable names with placeholders only. It is
-  safe to commit.
+- `.env.example` documents variable names with placeholders only and is safe
+  to commit.
 - `docker-compose.yml` contains no literal secrets; values are resolved from
   the environment at deploy time.
 - The following are never committed: `.env`, private keys (`*.key`, `*.pem`),
   and the `data/` tree.
-- Rotate the Vaultwarden admin token and FileBrowser admin password by editing
-  `.env` and re-running `docker compose up -d`. Re-running the FileBrowser init
-  container updates the admin password from the new value.
-- Environment variables are visible to a privileged local operator through
-  `docker inspect`. For a higher assurance deployment, migrate the two
-  secrets to Docker secrets or an external secret manager; the application
-  variable names remain the same.
+- Vaultwarden: `.env` contains only the Argon2id hash. The plaintext token is
+  kept in a password manager; a temporary root-only recovery copy was created
+  during migration and should be destroyed after transfer.
+- Dufs: `.env` contains the operator plaintext and its SHA-512 crypt hash. The
+  container receives only the hash, so `docker inspect` does not reveal the
+  login password.
+- Rotate the Vaultwarden admin token by generating a new Argon2id hash and
+  replacing `VAULTWARDEN_ADMIN_TOKEN`; rotate the Dufs password by generating a
+  new plaintext/hash pair and replacing both variables. Re-run
+  `docker compose up -d`.
 - Tailscale enrollment is interactive; no Tailscale auth key is stored in the
   repository or in `.env`.
 
-## 6. Verification checklist
+## 7. Verification checklist
 
 Run these after any change:
 
@@ -115,26 +147,35 @@ sudo ufw status verbose
 sudo sshd -T | grep -E 'permitrootlogin|passwordauthentication|pubkeyauthentication'
 sudo ss -tlnp
 cd /srv/fortress && sudo docker compose ps
+sudo docker compose logs vaultwarden | grep -i 'plain text' || true
+curl -sS -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8443/__dufs__/health
+tailscale serve status
 git check-ignore -v .env
 sudo repquota -u /
-tailscale status
 ```
 
 Expected: UFW active with only 22/tcp, `tailscale0`, and 41641/udp; SSH
-password and root login disabled; Docker ports bound to `127.0.0.1`; `.env`
-ignored; both tenants at their quota; Tailscale node online.
+password and root login disabled; Dufs and Vaultwarden healthy; Dufs health
+200; Vaultwarden log contains no plaintext-token warning; `.env` ignored; both
+tenants at their quota; Tailscale Serve maps 443 to Vaultwarden and 8443 to
+Dufs.
 
-## 7. Known limitations and residual risk
+Unauthenticated Dufs must return `401`; authenticated Dufs must return `200`.
 
-- **FileBrowser upstream is archived (2026-09-01).** It will receive no
-  further releases or security fixes, and public advisories identify known
-  unfixed issues. This deployment restricts it to the tailnet and loopback,
-  but that does not eliminate the risk. Treat it as a transitional tool and
-  migrate to a maintained file server before storing high-value data.
-- Vaultwarden is configured with a plain `ADMIN_TOKEN`, which it warns about
-  at startup. The token is 32 random hex characters in a 0600 `.env`; for
-  higher assurance, store an Argon2 PHC hash as `ADMIN_TOKEN` and keep the
-  plaintext only in a password manager.
-- Docker environment variables are visible to a privileged local operator via
-  `docker inspect`. Use Docker secrets or an external secret manager if the
-  host has untrusted local administrators.
+## 8. Known limitations and residual risk
+
+- Dufs runs as root to administer both tenant directories. This is convenient
+  but means Dufs uploads bypass the tenant UID quotas. Use scoped Dufs rules
+  and separate instances/UID mappings for strict quota enforcement.
+- The Vaultwarden plaintext admin token is not in `.env`, but a root-only
+  recovery file exists after migration. Move it to a password manager and
+  shred the file.
+- Docker environment variables (the Dufs SHA-512 hash and Vaultwarden Argon2id
+  hash) are visible to a privileged local operator through `docker inspect`.
+  These are hashes, not reusable plaintext credentials.
+- SSH on TCP/22 remains reachable from the physical LAN for break-glass
+  administration. Tighten the tailnet ACL and upstream firewall once the node
+  is on the home router.
+- The tailnet ACL is the final authorization boundary. A compromised tailnet
+  identity with access to this node can reach the services; enforce least
+  privilege in the Tailscale admin console.
