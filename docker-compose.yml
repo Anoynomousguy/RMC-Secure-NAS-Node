@@ -17,6 +17,8 @@ services:
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
+    mem_limit: 128m
+    memswap_limit: 128m
 
   vaultwarden:
     image: vaultwarden/server:1.37.5
@@ -34,6 +36,8 @@ services:
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
+    mem_limit: 256m
+    memswap_limit: 256m
 
 volumes:
   vaultwarden_data:
