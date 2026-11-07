@@ -1,0 +1,61 @@
+services:
+  filebrowser-init:
+    image: filebrowser/filebrowser:latest
+    container_name: fortress-filebrowser-init
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        mkdir -p /config
+        if [ ! -f /config/settings.json ]; then cp /defaults/settings.json /config/settings.json; fi
+        filebrowser --config=/config/settings.json config init --address 0.0.0.0 >/dev/null 2>&1 || true
+        filebrowser --config=/config/settings.json users add admin "$$FILEBROWSER_ADMIN_PASSWORD" --perm.admin >/dev/null 2>&1 || true
+        filebrowser --config=/config/settings.json users update admin --password "$$FILEBROWSER_ADMIN_PASSWORD"
+    environment:
+      FILEBROWSER_ADMIN_PASSWORD: ${FILEBROWSER_ADMIN_PASSWORD:?set FILEBROWSER_ADMIN_PASSWORD in .env}
+    volumes:
+      - filebrowser_config:/config
+      - filebrowser_database:/database
+    restart: "no"
+
+  filebrowser:
+    image: filebrowser/filebrowser:latest
+    container_name: fortress-filebrowser
+    user: "0:0"
+    depends_on:
+      filebrowser-init:
+        condition: service_completed_successfully
+    environment:
+      FILEBROWSER_ADMIN_PASSWORD: ${FILEBROWSER_ADMIN_PASSWORD:?set FILEBROWSER_ADMIN_PASSWORD in .env}
+    volumes:
+      - ./data:/srv
+      - filebrowser_config:/config
+      - filebrowser_database:/database
+    ports:
+      - "127.0.0.1:8080:80"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: fortress-vaultwarden
+    environment:
+      ADMIN_TOKEN: ${VAULTWARDEN_ADMIN_TOKEN:?set VAULTWARDEN_ADMIN_TOKEN in .env}
+      DOMAIN: ${VAULTWARDEN_DOMAIN:?set VAULTWARDEN_DOMAIN in .env}
+      SIGNUPS_ALLOWED: "false"
+      INVITATIONS_ALLOWED: "true"
+      WEBSOCKET_ENABLED: "true"
+    volumes:
+      - vaultwarden_data:/data
+    ports:
+      - "127.0.0.1:8081:80"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  filebrowser_config:
+  filebrowser_database:
+  vaultwarden_data:
