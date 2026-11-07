@@ -193,6 +193,15 @@ profile is still active.
 The ASUS-side helper container `t410-link` was only needed for the direct link;
 after the move it can be removed with `docker rm -f t410-link` on the ASUS.
 
+## Documentation
+
+- [Setup guide](docs/00_SETUP_GUIDE.md)
+- [Administrator manual](docs/01_ADMIN_MANUAL.md)
+- [Password and secret management](docs/02_PASSWORD_MANAGEMENT.md)
+- [Family tutorial](docs/03_FAMILY_TUTORIAL.md)
+- [Security audit](docs/04_SECURITY_AUDIT.md)
+- [Architecture](docs/05_ARCHITECTURE.md)
+
 ## Security controls
 
 - OMV web stack stopped, disabled, and masked.
