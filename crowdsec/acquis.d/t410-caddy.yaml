@@ -1,0 +1,4 @@
+filenames:
+  - /srv/fortress/caddy/logs/*.log
+labels:
+  type: caddy

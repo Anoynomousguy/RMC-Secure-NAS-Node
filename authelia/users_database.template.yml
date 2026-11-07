@@ -1,0 +1,19 @@
+users:
+  admin:
+    displayname: Administrator
+    password: '${AUTHELIA_ADMIN_PASSWORD_HASH}'
+    email: admin@example.invalid
+    groups:
+      - admins
+  user1:
+    displayname: User One
+    password: '${AUTHELIA_USER1_PASSWORD_HASH}'
+    email: user1@example.invalid
+    groups:
+      - users
+  user2:
+    displayname: User Two
+    password: '${AUTHELIA_USER2_PASSWORD_HASH}'
+    email: user2@example.invalid
+    groups:
+      - users

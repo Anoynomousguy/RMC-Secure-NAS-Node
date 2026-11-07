@@ -1,0 +1,47 @@
+{
+    auto_https off
+}
+
+:8083 {
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 10MiB
+            roll_keep 5
+        }
+        format json
+    }
+
+    handle_path /dav/* {
+        reverse_proxy dufs:5000
+    }
+
+    handle {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            header_up X-Forwarded-Proto https
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        reverse_proxy dufs:5000 {
+            header_up Authorization "Basic {env.DUFS_ADMIN_BASIC}"
+        }
+    }
+}
+
+:8090 {
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 10MiB
+            roll_keep 5
+        }
+        format json
+    }
+
+    handle {
+        forward_auth authelia:9091 {
+            uri /api/authz/forward-auth
+            header_up X-Forwarded-Proto https
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        reverse_proxy portal:3000
+    }
+}

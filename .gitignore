@@ -2,3 +2,8 @@
 *.key
 *.pem
 data/
+authelia/configuration.yml
+authelia/users_database.yml
+authelia/db.sqlite3
+authelia/notification.txt
+caddy/logs/
