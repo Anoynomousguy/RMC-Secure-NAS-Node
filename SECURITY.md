@@ -45,6 +45,8 @@ are untrusted transport.
 
 - Services are reached through Tailscale Serve over HTTPS at the node's
   MagicDNS name. Serve proxies only to loopback-bound containers.
+- Tailscale Serve/HTTPS certificates must be enabled for the tailnet before
+  the web services become reachable at that MagicDNS name.
 - No inbound port forwarding is required on the upstream router.
 - Tailscale ACLs should be used to restrict which tailnet identities can reach
   this node and which ports they can use. The default tailnet policy should be

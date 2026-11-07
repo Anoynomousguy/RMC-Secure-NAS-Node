@@ -16,7 +16,8 @@ ssh -i ~/.ssh/id_ed25519 YOUR_USERNAME@YOUR_LAN_IP
 ```
 
 - Direct Ethernet address: `YOUR_LAN_IP`
-- Tailscale address / MagicDNS name: see `tailscale status` on this node.
+- Tailscale address: `YOUR_TAILSCALE_IP`
+- MagicDNS name: `your-nas.your-tailnet.ts.net`
 - `YOUR_USERNAME` has passwordless sudo and Docker access.
 
 ### Tailscale
@@ -29,12 +30,21 @@ tailscale status
 tailscale ping t410
 ```
 
+Tailscale Serve must be enabled for the tailnet (HTTPS certificates). On the
+node, publish the loopback services:
+
+```sh
+sudo tailscale serve --bg --https=443 http://127.0.0.1:8081
+sudo tailscale serve --bg --https=8443 http://127.0.0.1:8080
+sudo tailscale serve status
+```
+
 All application traffic is expected to use the tailnet; do not expose these
 ports on the public Internet.
 
 ### FileBrowser
 
-- URL: `https://<TAILSCALE_DNS>:8443`
+- URL: `https://your-nas.your-tailnet.ts.net:8443`
 - Username: `admin`
 - Password: value of `FILEBROWSER_ADMIN_PASSWORD` in `/srv/fortress/.env`
 
@@ -44,8 +54,8 @@ limited to `user1` or `user2`; do not hand out the admin account.
 
 ### Vaultwarden
 
-- URL: `https://<TAILSCALE_DNS>/`
-- Admin panel: `https://<TAILSCALE_DNS>/admin`
+- URL: `https://your-nas.your-tailnet.ts.net/`
+- Admin panel: `https://your-nas.your-tailnet.ts.net/admin`
 - Admin token: value of `VAULTWARDEN_ADMIN_TOKEN` in `/srv/fortress/.env`
 
 Public signups are disabled. Create accounts by invitation from the admin
