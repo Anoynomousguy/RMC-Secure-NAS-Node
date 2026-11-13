@@ -4,7 +4,7 @@ How this NAS server was built, from bare hardware to the running stack.
 
 ## 1. Hardware
 
-- Lenovo ThinkPad T410, Intel Core i5 M520, 4–8 GB RAM, one internal SSD.
+- Lenovo ThinkPad, Intel Core i5 M520, 4–8 GB RAM, one internal SSD.
 - Wired NIC: `enp0s25` (Ethernet only; the Wi-Fi card firmware is not installed).
 - The machine runs headless. All work is done over SSH.
 

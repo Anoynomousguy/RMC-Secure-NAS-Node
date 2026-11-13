@@ -97,7 +97,7 @@ sudo docker compose -f /srv/fortress/docker-compose.yml logs authelia | tail -20
   ```
 
 - **Known limitation:** the default CrowdSec whitelist ignores private and
-  shared address ranges (including Tailscale's `100.64.0.0/10`). Attacks that
+  shared address ranges (including Tailscale's CGNAT range). Attacks that
   arrive *through the tailnet* are therefore not auto-banned at the firewall;
   SSH brute force from public/internet-facing paths and any non-whitelisted
   source is handled normally. Tailscale ACLs and key-only SSH remain the

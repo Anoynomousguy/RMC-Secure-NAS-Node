@@ -15,8 +15,8 @@ ranked by what an attacker who already has a tailnet device could do.
 answers without credentials:
 
 ```
-$ curl http://t410:11434/            -> "Ollama is running"
-$ curl http://t410:11434/api/tags    -> {"models":[{"name":"qwen3-vl:2b-instruct", ...}]}
+$ curl http://<nas-host>:11434/ -> "Ollama is running"
+$ curl http://<nas-host>:11434/api/tags -> {"models":[{"name":"qwen3-vl:2b-instruct", ...}]}
 ```
 
 Ollama is installed as a systemd unit, is bound beyond loopback, and has no auth

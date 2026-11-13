@@ -20,9 +20,9 @@ access-log parser and the generic HTTP scenarios.
 
 Copies of the host acquisition files live in `acquis.d/`:
 
-- `t410-sshd.yaml` - reads the systemd journal for `ssh.service` (sshd login
+- `*-sshd.yaml` - reads the systemd journal for `ssh.service` (sshd login
   failures, brute force).
-- `t410-caddy.yaml` - reads the Caddy access log written by the `fortress-caddy`
+- `*-caddy.yaml` - reads the Caddy access log written by the `fortress-caddy`
   container into `/srv/fortress/caddy/logs/access.log`.
 
 Install them with:
