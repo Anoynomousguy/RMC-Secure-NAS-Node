@@ -1,12 +1,59 @@
 # RMC Secure NAS Node
 
-A Debian 12 host running a private, Tailscale-only file and password service
-stack. OMV's web stack is stopped and masked. The running services are **Dufs
-v0.47.0** (file server) and **Vaultwarden 1.37.5**, both bound to loopback and
-published only through Tailscale Serve over HTTPS.
+Earlier single-node Debian 12 NAS: Dufs, Vaultwarden, Authelia, Caddy, portal.
+
+![Status: superseded](https://img.shields.io/badge/status-superseded-lightgrey)
+![Debian 12](https://img.shields.io/badge/Debian-12-a80030)
+
+A Debian 12 host that ran a private, Tailscale-only file, password and portal
+stack. Every published port is bound to `127.0.0.1` and reached through Tailscale
+Serve over HTTPS; OMV's web stack is stopped and masked.
+
+## Status
+
+Earlier single-node stack. Superseded by the Fortress stack in
+[NAS-CONFIDENTIAL](https://github.com/Anoynomousguy/NAS-CONFIDENTIAL) (private).
+Kept for reference; not actively maintained.
+
+## Services
+
+`docker-compose.yml` defines seven services:
+
+| Service | Image or build | Role | Published |
+| --- | --- | --- | --- |
+| `dufs` | `sigoden/dufs:v0.47.0` | File server | `127.0.0.1:8443` |
+| `vaultwarden` | `vaultwarden/server:1.37.5` | Password vault | `127.0.0.1:8081` |
+| `authelia` | `authelia/authelia:4.39.28` | SSO and forward auth | `127.0.0.1:9091` |
+| `caddy` | `caddy:2.11.9` | Forward auth and Basic-auth injection | `127.0.0.1:8083`, `127.0.0.1:8090` |
+| `portal` | `./portal` | Express API and React web UI | `127.0.0.1:3000` |
+| `uptime-kuma` | `louislam/uptime-kuma:2.5.9` | Monitoring | `127.0.0.1:3001` |
+| `kuma-init` | `node:22-alpine` | One-shot monitor bootstrap | none |
 
 Dufs replaced FileBrowser because the former upstream project is archived and
 receives no security fixes. Dufs is actively maintained and pinned.
+
+## Quick start
+
+```sh
+cp .env.example .env      # fill in the required secrets
+sudo docker compose up -d
+sudo docker compose ps
+```
+
+## Repository map
+
+```text
+docker-compose.yml        Seven-service stack definition
+authelia/                 SSO configuration and user database templates
+caddy/                    Caddyfile for forward auth and Basic-auth injection
+crowdsec/                 Host-installed CrowdSec acquisition files
+portal/server/            Express API (RBAC, path scoping, quotas, uploads)
+portal/web/               React web UI
+kuma-init/                Uptime Kuma bootstrap script
+scripts/                  Emergency kit, Authelia rendering, host security, backup
+docs/                     Setup guide, admin manual, passwords, tutorial, audit
+SECURITY.md               Threat model and verification checklist
+```
 
 ## Access
 
@@ -30,7 +77,7 @@ node's MagicDNS name:
 
 ```sh
 tailscale status
-tailscale ping t410
+tailscale ping <nas-host>
 ```
 
 Tailscale Serve must be enabled for the tailnet (HTTPS certificates). The node
@@ -190,8 +237,8 @@ profile is still active.
    sudo nmcli connection up "Wired connection 1"
    ```
 
-The ASUS-side helper container `t410-link` was only needed for the direct link;
-after the move it can be removed with `docker rm -f t410-link` on the ASUS.
+The ASUS-side helper container `<nas-host>-link` was only needed for the direct link;
+after the move it can be removed with `docker rm -f <nas-host>-link` on the ASUS.
 
 ## Documentation
 
@@ -201,6 +248,13 @@ after the move it can be removed with `docker rm -f t410-link` on the ASUS.
 - [Family tutorial](docs/03_FAMILY_TUTORIAL.md)
 - [Security audit](docs/04_SECURITY_AUDIT.md)
 - [Architecture](docs/05_ARCHITECTURE.md)
+
+## Related repositories
+
+- [NAS-CONFIDENTIAL](https://github.com/Anoynomousguy/NAS-CONFIDENTIAL) — private
+  operational archive for the Fortress stack (not publicly viewable).
+- [NAS-Photo-Manager](https://github.com/Anoynomousguy/NAS-Photo-Manager) —
+  Flutter WebDAV photo client for the Fortress NAS.
 
 ## Security controls
 
@@ -240,4 +294,4 @@ intentionally disabled.
 - The Vaultwarden plaintext recovery file is root-only but must be moved to a
   password manager and destroyed.
 - Tailscale ACLs are the final authorization boundary; restrict which devices
-  can reach `t410` and which ports they can use.
+  can reach `<nas-host>` and which ports they can use.
