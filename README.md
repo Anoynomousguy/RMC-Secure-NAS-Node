@@ -295,3 +295,7 @@ intentionally disabled.
   password manager and destroyed.
 - Tailscale ACLs are the final authorization boundary; restrict which devices
   can reach `<nas-host>` and which ports they can use.
+
+## Documentation
+
+- [`docs/STACK_GUIDE.md`](docs/STACK_GUIDE.md) — the reference stack, placeholders to replace, and what to change before trusting it.
